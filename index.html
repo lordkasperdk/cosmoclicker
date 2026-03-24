@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CosmoCLicker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#0c0f1a;--bg2:#111422;--bg3:#161929;
+  --s1:#1c2035;--s2:#222640;--s3:#2a2f50;
+  --b1:rgba(100,130,200,.12);--b2:rgba(100,130,200,.22);--b3:rgba(100,130,200,.4);
+  --t1:#eef0f8;--t2:#8890b0;--t3:#4a5070;
+  --blue:#4f8ef7;--blue2:#2563d4;--bl:#a8c4ff;
+  --green:#34d399;--amber:#fbbf24;--red:#f87171;--purple:#a78bfa;--pink:#f472b6;
+  --sh:0 4px 16px rgba(0,0,0,.5);--shl:0 8px 32px rgba(0,0,0,.6);
+  --r:8px;--r2:12px;--r3:18px;
+}
+body{background:var(--bg);color:var(--t1);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden;font-size:14px;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 15% 5%,rgba(37,99,212,.08) 0%,transparent 60%),radial-gradient(ellipse 40% 60% at 85% 85%,rgba(79,142,247,.05) 0%,transparent 60%);pointer-events:none;z-index:0;}
+#stars-c{position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.5;}
+
+/* LAYOUT */
+#game{position:relative;z-index:1;display:grid;grid-template-columns:270px 1fr 290px;min-height:100vh;}
+#lp,#rp{background:var(--bg2);padding:14px 13px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;max-height:100vh;}
+#lp{border-right:1px solid var(--b1);}
+#rp{border-left:1px solid var(--b1);}
+#ctr{display:flex;flex-direction:column;align-items:center;padding:16px 20px;gap:12px;overflow-y:auto;max-height:100vh;}
+
+/* LOGO */
+.logo{font-family:'DM Serif Display',serif;font-size:15px;color:#fff;display:flex;align-items:center;gap:8px;}
+.logo-dot{width:8px;height:8px;border-radius:50%;background:var(--blue);box-shadow:0 0 10px var(--blue);animation:pulse 2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.6)}}
+
+/* LEVEL CARD */
+#lv-card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);padding:11px 13px;}
+#lv-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;}
+#lv-badge{background:var(--blue2);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;}
+#lv-name{font-size:10px;color:var(--bl);font-weight:600;max-width:130px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#xp-wrap{height:5px;background:var(--b1);border-radius:3px;overflow:hidden;margin-bottom:4px;}
+#xp-bar{height:100%;background:linear-gradient(90deg,var(--blue2),var(--blue));border-radius:3px;transition:width .5s ease;}
+#xp-txt{font-size:9px;color:var(--t3);display:flex;justify-content:space-between;}
+#next-unlock{font-size:9px;color:var(--amber);margin-top:4px;padding:3px 6px;background:rgba(251,191,36,.08);border-radius:4px;}
+
+/* TOPBAR */
+#topbar{width:100%;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
+#res-row{display:flex;gap:14px;flex-wrap:wrap;}
+.ri{display:flex;flex-direction:column;gap:1px;}
+.rv{font-size:15px;font-weight:600;color:#fff;}
+.rl{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.7px;}
+.rr{font-size:9px;color:var(--green);font-weight:500;}
+#world-pill{display:inline-flex;align-items:center;gap:6px;background:var(--s1);border:1px solid var(--b1);border-radius:20px;padding:5px 12px;font-size:10px;font-weight:600;color:var(--bl);}
+
+/* EVENT BANNER */
+#event-banner{width:100%;background:linear-gradient(135deg,rgba(251,191,36,.15),rgba(244,114,182,.1));border:1px solid rgba(251,191,36,.4);border-radius:var(--r2);padding:10px 16px;display:none;align-items:center;gap:10px;}
+#event-banner.show{display:flex;}
+#ev-icon{font-size:22px;}
+#ev-text{flex:1;}
+#ev-title{font-size:12px;font-weight:700;color:var(--amber);}
+#ev-desc{font-size:10px;color:var(--t2);}
+#ev-timer-wrap{width:60px;height:4px;background:var(--b1);border-radius:2px;overflow:hidden;margin-top:4px;}
+#ev-timer-bar{height:100%;background:var(--amber);border-radius:2px;transition:width .1s linear;}
+
+/* CLICK AREA */
+#click-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;position:relative;}
+#big-btn{width:180px;height:180px;border-radius:50%;border:2px solid rgba(79,142,247,.3);background:radial-gradient(circle at 38% 32%,#1e2b4a 0%,var(--bg3) 70%);cursor:pointer;position:relative;transition:transform .08s,box-shadow .15s,border-color .15s;box-shadow:0 0 0 8px rgba(79,142,247,.04),0 0 40px rgba(79,142,247,.1),var(--shl);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:5px;user-select:none;outline:none;}
+#big-btn::before{content:'';position:absolute;inset:-4px;border-radius:50%;border:1px solid rgba(79,142,247,.1);}
+#big-btn:hover{box-shadow:0 0 0 12px rgba(79,142,247,.07),0 0 60px rgba(79,142,247,.18),var(--shl);border-color:rgba(79,142,247,.5);}
+#big-btn:active{transform:scale(.92);}
+#big-btn.crit-anim{animation:critPulse .3s ease-out;}
+@keyframes critPulse{0%{box-shadow:0 0 0 0 rgba(251,191,36,.8)}100%{box-shadow:0 0 0 40px rgba(251,191,36,0);border-color:rgba(251,191,36,.8);}}
+#btn-icon{font-size:52px;line-height:1;filter:drop-shadow(0 0 10px rgba(79,142,247,.5));}
+#btn-sub{font-size:11px;color:var(--bl);letter-spacing:1.5px;font-weight:500;}
+#crit-ring{position:absolute;inset:-10px;border-radius:50%;border:2px solid var(--amber);opacity:0;pointer-events:none;}
+#crit-ring.show{animation:critRing .5s ease-out forwards;}
+@keyframes critRing{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.3)}}
+
+/* CLICK INFO ROW */
+.ci-row{display:flex;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);}
+.ci{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 14px;}
+.ci-v{font-size:13px;font-weight:600;color:var(--bl);}
+.ci-l{font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;}
+.ci-d{width:1px;background:var(--b1);margin:7px 0;}
+
+/* FLOAT TEXT */
+.ft{position:fixed;pointer-events:none;font-size:14px;font-weight:700;color:#fff;text-shadow:0 0 10px rgba(79,142,247,.9);animation:ftUp 1s ease-out forwards;z-index:9999;}
+.ft.crit{font-size:20px;color:var(--amber);text-shadow:0 0 15px rgba(251,191,36,1);}
+.ft.xp{font-size:11px;color:var(--green);text-shadow:0 0 8px rgba(52,211,153,.8);}
+.ft.bonus{font-size:16px;color:var(--pink);text-shadow:0 0 12px rgba(244,114,182,1);}
+@keyframes ftUp{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-65px) scale(.8)}}
+
+/* BOSS FIGHT */
+#boss-panel{width:100%;background:linear-gradient(135deg,rgba(248,113,113,.1),rgba(167,139,250,.08));border:1px solid rgba(248,113,113,.35);border-radius:var(--r2);padding:14px;display:none;}
+#boss-panel.show{display:block;}
+#boss-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+#boss-ico{font-size:28px;}
+#boss-name{font-size:13px;font-weight:700;color:var(--red);}
+#boss-hp-wrap{height:8px;background:rgba(248,113,113,.15);border-radius:4px;overflow:hidden;margin-bottom:6px;}
+#boss-hp-bar{height:100%;background:linear-gradient(90deg,#f87171,#ef4444);border-radius:4px;transition:width .2s;}
+#boss-info{display:flex;justify-content:space-between;font-size:10px;color:var(--t2);}
+#boss-atk-btn{margin-top:8px;width:100%;background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.4);border-radius:var(--r);padding:8px;color:var(--red);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;}
+#boss-atk-btn:hover{background:rgba(248,113,113,.25);}
+
+/* SKILL TREE */
+#skill-tree{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.skill-btn{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:8px;cursor:pointer;transition:all .15s;text-align:left;}
+.skill-btn:hover:not(.locked-sk):not(.maxed-sk){background:var(--s2);border-color:var(--b2);}
+.skill-btn.locked-sk{opacity:.25;cursor:not-allowed;}
+.skill-btn.maxed-sk{border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.05);}
+.sk-top{display:flex;align-items:center;gap:6px;margin-bottom:4px;}
+.sk-ico{font-size:16px;}
+.sk-name{font-size:10px;font-weight:600;flex:1;}
+.sk-lv{font-size:9px;color:var(--green);font-weight:700;}
+.sk-desc{font-size:8px;color:var(--t2);}
+.sk-cost{font-size:8px;color:var(--amber);margin-top:3px;}
+.sk-bar{height:2px;background:var(--b1);border-radius:1px;margin-top:4px;overflow:hidden;}
+.sk-bar-fill{height:100%;background:var(--green);border-radius:1px;transition:width .3s;}
+
+/* SECTION LABEL */
+.sl{font-size:9px;font-weight:600;letter-spacing:1.5px;color:var(--t3);text-transform:uppercase;padding:3px 0 6px;border-bottom:1px solid var(--b1);margin-bottom:5px;}
+.sc{width:100%;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);padding:12px;}
+
+/* TABS */
+.tabs{display:flex;gap:4px;}
+.tab{flex:1;padding:6px 3px;background:transparent;border:1px solid var(--b1);border-radius:var(--r);cursor:pointer;font-size:9px;font-weight:600;letter-spacing:.6px;color:var(--t3);text-align:center;transition:all .15s;font-family:'DM Sans',sans-serif;text-transform:uppercase;}
+.tab:hover{background:var(--s1);color:var(--t2);}
+.tab.active{background:var(--s2);border-color:var(--b3);color:var(--bl);}
+
+/* UPGRADES */
+.upg-btn{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:8px 10px;cursor:pointer;transition:all .15s;display:flex;gap:9px;align-items:center;width:100%;text-align:left;margin-bottom:4px;}
+.upg-btn:hover{background:var(--s2);border-color:var(--b2);}
+.upg-btn.af{border-color:rgba(79,142,247,.4);background:rgba(79,142,247,.06);}
+.upg-btn.anim-buy{animation:buyPop .35s cubic-bezier(.175,.885,.32,1.275);}
+@keyframes buyPop{0%{transform:scale(1)}50%{transform:scale(1.04);background:rgba(52,211,153,.15)}100%{transform:scale(1)}}
+.ub-ico{font-size:18px;min-width:23px;text-align:center;}
+.ub-name{font-size:10px;font-weight:600;}
+.ub-desc{font-size:9px;color:var(--t2);margin:1px 0;}
+.ub-cost{font-size:9px;color:var(--amber);font-weight:500;margin-top:2px;}
+.ub-world{font-size:8px;color:var(--purple);font-weight:600;margin-top:1px;}
+.ub-prog{font-size:8px;color:var(--t3);margin-top:2px;}
+
+/* SEARCH */
+#upg-search{width:100%;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:6px 10px;font-family:'DM Sans',sans-serif;font-size:10px;color:var(--t1);outline:none;margin-bottom:6px;}
+#upg-search::placeholder{color:var(--t3);}
+#upg-search:focus{border-color:var(--b2);}
+
+/* BUILDINGS */
+.b-row{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:8px 9px;display:flex;align-items:center;gap:7px;margin-bottom:4px;transition:all .15s;}
+.b-row:hover{background:var(--s2);}
+.b-row.af{border-color:rgba(79,142,247,.3);}
+.b-row.lkd{opacity:.2;}
+.b-ico{font-size:17px;min-width:22px;text-align:center;}
+.b-inf{flex:1;min-width:0;}
+.b-name{font-size:10px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.b-prod{font-size:9px;color:var(--green);margin-top:1px;}
+.b-req{font-size:8px;color:var(--amber);margin-top:1px;}
+.b-pg{height:2px;background:var(--b1);border-radius:1px;margin-top:3px;overflow:hidden;}
+.b-pgf{height:100%;background:var(--blue);border-radius:1px;transition:width .3s;}
+.b-cnt{font-size:14px;font-weight:700;color:#fff;min-width:22px;text-align:center;}
+.b-btn{background:var(--s2);border:1px solid var(--b2);border-radius:6px;padding:3px 7px;cursor:pointer;font-size:9px;font-family:'DM Sans',sans-serif;font-weight:600;color:var(--amber);transition:all .12s;white-space:nowrap;}
+.b-btn:hover:not(:disabled){background:rgba(251,191,36,.12);border-color:rgba(251,191,36,.4);}
+.b-btn:disabled{opacity:.2;cursor:not-allowed;}
+.b-row.af .b-btn{border-color:rgba(251,191,36,.4);}
+
+/* WORLDS NAV */
+.w-nav-btn{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--r);border:1px solid var(--b1);background:var(--s1);cursor:pointer;transition:all .15s;position:relative;margin-bottom:4px;}
+.w-nav-btn:hover:not(.lkd-w){background:var(--s2);border-color:var(--b2);}
+.w-nav-btn.act-w{border-color:rgba(79,142,247,.5);background:rgba(79,142,247,.08);}
+.w-nav-btn.lkd-w{opacity:.28;cursor:not-allowed;}
+.wnb-ico{font-size:20px;min-width:26px;text-align:center;}
+.wnb-t{flex:1;}
+.wnb-name{font-size:11px;font-weight:600;}
+.wnb-sub{font-size:9px;color:var(--t2);margin-top:1px;}
+.wnb-lk{font-size:8px;color:var(--amber);}
+.act-dot{width:6px;height:6px;border-radius:50%;background:var(--blue);box-shadow:0 0 6px var(--blue);}
+
+/* ACHIEVEMENTS */
+.ach-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;}
+.ai{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:6px 3px;text-align:center;cursor:default;position:relative;transition:all .2s;}
+.ai.ul{border-color:rgba(251,191,36,.4);background:rgba(251,191,36,.05);}
+.ai.lk{opacity:.2;filter:grayscale(1);}
+.ai .ai-i{font-size:15px;}
+.ai .ai-n{font-size:7px;color:var(--t2);margin-top:2px;line-height:1.2;}
+.ai[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:110%;left:50%;transform:translateX(-50%);background:var(--s2);border:1px solid var(--b2);border-radius:6px;padding:4px 8px;font-size:9px;color:var(--t1);white-space:nowrap;z-index:100;pointer-events:none;box-shadow:var(--sh);}
+
+/* STAT ROWS */
+.str{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--b1);}
+.str:last-child{border-bottom:none;}
+.sl2{font-size:10px;color:var(--t2);}
+.sv{font-size:10px;font-weight:600;color:var(--bl);}
+
+/* PRESTIGE */
+#pres-panel{background:linear-gradient(135deg,rgba(37,99,212,.1),rgba(79,142,247,.05));border:1px solid rgba(79,142,247,.2);border-radius:var(--r2);padding:13px;text-align:center;margin-top:4px;}
+#pres-panel h3{font-family:'DM Serif Display',serif;font-size:14px;color:#fff;margin-bottom:5px;}
+#pres-panel p{font-size:10px;color:var(--t2);line-height:1.6;}
+#pres-btn{background:var(--blue2);border:none;border-radius:var(--r);padding:7px 16px;color:#fff;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;margin-top:8px;}
+#pres-btn:hover:not(:disabled){background:var(--blue);transform:translateY(-1px);box-shadow:0 4px 14px rgba(79,142,247,.4);}
+#pres-btn:disabled{opacity:.2;cursor:not-allowed;}
+
+/* SAVE PANEL */
+#save-panel{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);padding:11px;margin-top:6px;}
+.save-btn{width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:6px;color:var(--t2);font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;cursor:pointer;transition:all .12s;margin-bottom:4px;}
+.save-btn:hover{background:var(--s3);color:var(--t1);}
+#save-code{width:100%;background:var(--bg3);border:1px solid var(--b1);border-radius:var(--r);padding:6px;font-size:9px;color:var(--t2);font-family:monospace;resize:none;height:50px;outline:none;margin-top:4px;}
+
+/* LEVEL UP POPUP */
+#lv-overlay{display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.65);align-items:center;justify-content:center;}
+#lv-overlay.show{display:flex;}
+#lv-box{background:var(--bg2);border:1px solid rgba(79,142,247,.4);border-radius:20px;padding:28px 36px;text-align:center;animation:popIn .4s cubic-bezier(.175,.885,.32,1.275);box-shadow:0 0 80px rgba(79,142,247,.2),var(--shl);max-width:360px;width:92%;}
+@keyframes popIn{from{transform:scale(.55);opacity:0}to{transform:scale(1);opacity:1}}
+#lv-ico{font-size:50px;margin-bottom:8px;}
+#lv-title{font-family:'DM Serif Display',serif;font-size:22px;color:#fff;margin-bottom:4px;}
+#lv-sub{font-size:12px;color:var(--bl);margin-bottom:12px;}
+#lv-rw{background:var(--s1);border-radius:var(--r2);padding:10px;text-align:left;}
+.lv-rw-row{display:flex;align-items:center;gap:7px;padding:3px 0;font-size:10px;color:var(--t2);}
+.lv-rw-row span{color:var(--green);font-weight:600;}
+#lv-close{background:var(--blue2);border:none;border-radius:var(--r);padding:9px 26px;color:#fff;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;margin-top:12px;transition:all .2s;}
+#lv-close:hover{background:var(--blue);}
+
+/* NOTIF */
+#notif{position:fixed;top:12px;right:12px;z-index:9997;display:flex;flex-direction:column;gap:5px;max-width:265px;}
+.ni{background:var(--s2);border:1px solid var(--b2);border-left:3px solid var(--blue);border-radius:var(--r);padding:8px 12px;font-size:11px;color:var(--t1);box-shadow:var(--sh);animation:slideIn .25s ease-out,fadeOut .4s 2.6s forwards;}
+.ni.gold{border-left-color:var(--amber);}
+.ni.green{border-left-color:var(--green);}
+.ni.purple{border-left-color:var(--purple);}
+.ni.red{border-left-color:var(--red);}
+.ni.pink{border-left-color:var(--pink);}
+@keyframes slideIn{from{transform:translateX(14px);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes fadeOut{to{opacity:0;transform:translateX(8px)}}
+
+/* GRAPH */
+#graph-wrap{width:100%;height:80px;position:relative;}
+#graph-canvas{width:100%;height:100%;border-radius:var(--r);}
+
+#save-ind{position:fixed;bottom:10px;right:10px;font-size:8px;color:var(--t3);letter-spacing:.7px;background:var(--s1);border:1px solid var(--b1);border-radius:4px;padding:3px 7px;}
+::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px;}
+
+/* PROGRESS TO NEXT */
+#next-wrap{width:100%;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);padding:10px 13px;}
+.nx-row{display:flex;justify-content:space-between;align-items:center;font-size:9px;margin-bottom:5px;}
+.nx-label{color:var(--t2);}
+.nx-val{color:var(--bl);font-weight:600;}
+.nx-bar{height:3px;background:var(--b1);border-radius:2px;overflow:hidden;}
+.nx-fill{height:100%;border-radius:2px;transition:width .4s;}
+
+/* OFFLINE BANNER */
+#offline-banner{width:100%;background:linear-gradient(135deg,rgba(52,211,153,.1),rgba(79,142,247,.08));border:1px solid rgba(52,211,153,.3);border-radius:var(--r2);padding:10px 14px;display:none;align-items:center;gap:10px;}
+#offline-banner.show{display:flex;}
+</style>
+</head>
+<body>
+<canvas id="stars-c"></canvas>
+<div id="notif"></div>
+<div id="save-ind">💾 auto-gem</div>
+
+<!-- LEVEL UP POPUP -->
+<div id="lv-overlay" onclick="closeLvlUp()">
+  <div id="lv-box" onclick="event.stopPropagation()">
+    <div id="lv-ico">⭐</div>
+    <div id="lv-title">Level Up!</div>
+    <div id="lv-sub">Level 1</div>
+    <div id="lv-rw"></div>
+    <button id="lv-close" onclick="closeLvlUp()">Fortsæt →</button>
+  </div>
+</div>
+
+<div id="game">
+<!-- ═══ LEFT PANEL ═══ -->
+<div id="lp">
+  <div style="padding:4px 0 8px;">
+    <div class="logo"><div class="logo-dot"></div>CosmoCLicker</div>
+    <div style="font-size:9px;color:var(--t3);margin-top:2px;padding-left:16px;" id="pres-label">Prestige ★0 · Mult ×1.0</div>
+  </div>
+
+  <!-- LEVEL CARD -->
+  <div id="lv-card">
+    <div id="lv-top">
+      <div id="lv-badge">LVL 1</div>
+      <div id="lv-name">Nybegynder</div>
+    </div>
+    <div id="xp-wrap"><div id="xp-bar" style="width:0%"></div></div>
+    <div id="xp-txt"><span id="xp-cur">0</span><span id="xp-max">/ 100 XP</span></div>
+    <div id="next-unlock">Næste: Asteroidebæltet på level 5</div>
+  </div>
+
+  <div class="tabs" id="ltabs">
+    <div class="tab active" onclick="lsTab('upg')">Opgr.</div>
+    <div class="tab" onclick="lsTab('skill')">Skills</div>
+    <div class="tab" onclick="lsTab('world')">Verden</div>
+    <div class="tab" onclick="lsTab('save')">Gem</div>
+  </div>
+
+  <div id="lt-upg">
+    <input id="upg-search" placeholder="🔍 Søg upgrades..." oninput="renderUpgrades()">
+    <div class="sl">Klik upgrades</div>
+    <div id="click-upgs"></div>
+    <div class="sl" style="margin-top:6px;">Auto upgrades</div>
+    <div id="auto-upgs"></div>
+  </div>
+
+  <div id="lt-skill" style="display:none;">
+    <div class="sl">Skill Tree</div>
+    <div id="skill-tree"></div>
+  </div>
+
+  <div id="lt-world" style="display:none;">
+    <div class="sl">Dimensioner</div>
+    <div id="worlds-nav"></div>
+  </div>
+
+  <div id="lt-save" style="display:none;">
+    <div class="sl">Gem & Indlæs</div>
+    <div id="save-panel">
+      <button class="save-btn" onclick="exportSave()">📤 Eksportér save</button>
+      <button class="save-btn" onclick="document.getElementById('save-code').style.display='block';document.getElementById('save-code').focus()">📥 Importér save</button>
+      <textarea id="save-code" style="display:none;" placeholder="Indsæt save-kode her og tryk Enter..."></textarea>
+      <button class="save-btn" onclick="clearSave()" style="color:var(--red);margin-top:6px;">🗑️ Slet gem</button>
+    </div>
+    <div class="sl" style="margin-top:8px;">Statistik</div>
+    <div id="stats-panel"></div>
+    <div class="sl" style="margin-top:8px;">Produktion over tid</div>
+    <div id="graph-wrap"><canvas id="graph-canvas"></canvas></div>
+  </div>
+</div>
+
+<!-- ═══ CENTER ═══ -->
+<div id="ctr">
+
+  <!-- OFFLINE BANNER -->
+  <div id="offline-banner">
+    <span style="font-size:20px;">💤</span>
+    <div>
+      <div style="font-size:11px;font-weight:600;color:var(--green);">Offline fremgang!</div>
+      <div style="font-size:10px;color:var(--t2);" id="offline-txt">Du var væk i 0m — optjente 0 energi</div>
+    </div>
+    <button onclick="document.getElementById('offline-banner').classList.remove('show')" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:16px;margin-left:auto;">✕</button>
+  </div>
+
+  <!-- TOP BAR -->
+  <div id="topbar">
+    <div id="res-row">
+      <div class="ri"><span class="rv" id="r-e">0</span><span class="rl">⚡ Energi</span><span class="rr" id="r-er">+0/s</span></div>
+      <div class="ri"><span class="rv" id="r-m">—</span><span class="rl">💎 Stof</span><span class="rr" id="r-mr" style="color:var(--t3)">låst</span></div>
+      <div class="ri"><span class="rv" id="r-d">—</span><span class="rl">🌑 Mørk</span><span class="rr" id="r-dr" style="color:var(--t3)">låst</span></div>
+      <div class="ri"><span class="rv" id="r-s">—</span><span class="rl">✨ Støv</span><span class="rr" id="r-sr" style="color:var(--t3)">låst</span></div>
+    </div>
+    <div id="world-pill"><span id="w-icon">🌍</span><span id="w-name">Solsystemet</span></div>
+  </div>
+
+  <!-- EVENT BANNER -->
+  <div id="event-banner">
+    <div id="ev-icon">🎁</div>
+    <div id="ev-text">
+      <div id="ev-title">BONUS EVENT!</div>
+      <div id="ev-desc">5× energi i 10 sekunder</div>
+      <div id="ev-timer-wrap"><div id="ev-timer-bar" style="width:100%"></div></div>
+    </div>
+  </div>
+
+  <!-- BOSS FIGHT -->
+  <div id="boss-panel">
+    <div id="boss-header">
+      <div id="boss-ico">👾</div>
+      <div>
+        <div id="boss-name">KOSMISK BOSS</div>
+        <div style="font-size:9px;color:var(--t2);" id="boss-reward">Belønning: +500 XP + bonus</div>
+      </div>
+    </div>
+    <div id="boss-hp-wrap"><div id="boss-hp-bar" style="width:100%"></div></div>
+    <div id="boss-info"><span id="boss-hp-txt">HP: 1000 / 1000</span><span id="boss-dps">DPS: 0</span></div>
+    <button id="boss-atk-btn" onclick="attackBoss()">⚔️ ANGRIB BOSS</button>
+  </div>
+
+  <!-- CLICK AREA -->
+  <div id="click-wrap">
+    <div id="big-btn" onclick="doClick(event)">
+      <div id="crit-ring"></div>
+      <div id="btn-icon">⚡</div>
+      <div id="btn-sub">KLIK</div>
+    </div>
+    <div class="ci-row">
+      <div class="ci"><span class="ci-v" id="cp-d">1</span><span class="ci-l">Per klik</span></div>
+      <div class="ci-d"></div>
+      <div class="ci"><span class="ci-v" id="aps-d">0</span><span class="ci-l">Per sek</span></div>
+      <div class="ci-d"></div>
+      <div class="ci"><span class="ci-v" id="tc-d">0</span><span class="ci-l">Total klik</span></div>
+      <div class="ci-d"></div>
+      <div class="ci"><span class="ci-v" id="cr-d" style="color:var(--amber);">5%</span><span class="ci-l">Crit chance</span></div>
+    </div>
+  </div>
+
+  <!-- NEXT UNLOCK PROGRESS -->
+  <div id="next-wrap">
+    <div class="sl" style="margin-bottom:6px;">Næste mål</div>
+    <div id="next-goals"></div>
+  </div>
+
+  <!-- WORLD EXCLUSIVE UPGRADES -->
+  <div style="width:100%;">
+    <div class="sl" id="wu-label">🌍 Solsystemet — Eksklusive Upgrades</div>
+    <div id="world-upgs"></div>
+  </div>
+
+  <!-- ACHIEVEMENTS -->
+  <div class="sc">
+    <div class="sl">Præstationer (<span id="ach-cnt">0</span>/<span id="ach-tot">0</span>)</div>
+    <div class="ach-grid" id="ach-grid"></div>
+  </div>
+</div>
+
+<!-- ═══ RIGHT PANEL ═══ -->
+<div id="rp">
+  <div class="sl">Kosmiske strukturer</div>
+  <div id="bldgs"></div>
+
+  <div id="pres-panel">
+    <h3>⭐ Prestige Reset</h3>
+    <p>Nulstil for en permanent<br><span style="color:var(--bl);font-weight:600;">★ Stjerne-multiplikator</span></p>
+    <div style="font-size:10px;color:var(--t2);margin-top:5px;">Kræver: <span style="color:var(--amber)">Level 50</span></div>
+    <div style="font-size:11px;color:#fff;margin-top:4px;font-weight:500;">
+      Stjerner: <span id="p-cnt">0</span>
+      <span style="color:var(--t2);font-weight:400;"> → Næste: +</span><span id="p-gain" style="color:var(--bl);">15</span>%
+    </div>
+    <button id="pres-btn" onclick="doPrestige()" disabled>⭐ Prestige Reset</button>
+  </div>
+</div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  AUDIO ENGINE (Web Audio API — ingen ekstern fil nødvendig)
+// ═══════════════════════════════════════════════════════════
+let audioCtx = null;
+function getAudioCtx(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); return audioCtx; }
+function playTone(freq, type, dur, vol, detune=0){
+  try{
+    const ctx=getAudioCtx(),o=ctx.createOscillator(),g=ctx.createGain();
+    o.connect(g);g.connect(ctx.destination);
+    o.type=type;o.frequency.value=freq;o.detune.value=detune;
+    g.gain.setValueAtTime(vol,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+dur);
+    o.start(ctx.currentTime);o.stop(ctx.currentTime+dur);
+  }catch(e){}
+}
+function sfxClick(){ playTone(440,'sine',.08,.08); playTone(550,'triangle',.05,.04,20); }
+function sfxCrit(){ playTone(880,'square',.15,.12); playTone(1320,'sine',.2,.1,10); playTone(660,'sawtooth',.1,.06,5); }
+function sfxBuy(){ playTone(660,'sine',.1,.1); playTone(880,'sine',.12,.08); }
+function sfxLvlUp(){ [440,550,660,880].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',.18,.12),i*80)); }
+function sfxBoss(){ playTone(220,'square',.3,.15); playTone(180,'sawtooth',.25,.1,-10); }
+function sfxEvent(){ [660,770,880,1100].forEach((f,i)=>setTimeout(()=>playTone(f,'triangle',.12,.1),i*60)); }
+
+// ═══════════════════════════════════════════════════════════
+//  GAME STATE
+// ═══════════════════════════════════════════════════════════
+const G = {
+  energy:0,matter:0,dark:0,stardust:0,
+  totalEarned:0,totalClicks:0,
+  level:1,xp:0,
+  currentWorld:0,unlockedWorlds:[0],
+  prestigeStars:0,prestigeMult:1,
+  lastTick:Date.now(),playTime:0,
+  buildings:{},buyUpgs:{},buyWorldUpgs:{},
+  skills:{},
+  critChance:.05,critMult:10,
+  // event state
+  activeEvent:null,eventTimeLeft:0,
+  // boss state
+  bossActive:false,bossHp:0,bossMaxHp:0,bossId:0,
+  // stats
+  totalCrits:0,totalEventsCaught:0,totalBossKills:0,
+};
+
+// ═══════════════════════════════════════════════════════════
+//  CONSTANTS
+// ═══════════════════════════════════════════════════════════
+const LV_NAMES = ['','Nybegynder','Udforskeren','Energihøster','Stjernelærer','Kosmisk Pilgrim','Rummand','Planetjæger','Galaktiker','Supernovaen','Stjernenavigator','Nebulamester','Pulsarridder','Kvarkmager','Antimaterie Guru','Singularitetens Vogter','Dimensionsvandrer','Tidsbryder','Kvanteprins','Kosmisk Oracle','Universets Søn','Stjernegud','Galaksekonge','Omnivers Herre','Det Sorte Hul','Tidsløs','Realitetssmed','Eksistensens Kilde','Omega Pilgrim','Alskaberen','Gudernes Gud','Tidernes Herre','Kaosmester','Infinitum','Verdensnedriveren','Primordial Sjæl','Kosmisk Virus','Kaosfrø','Universets Hjerte','Altet','Den Første','Den Sidste','Grænsen','Uendelighedens Barn','Fortiden','Fremtiden','Nuet','Tid & Rum','Det Tomme','Det Fulde','Omega Punkt'];
+
+const WORLDS = [
+  {id:0,name:"Solsystemet",icon:"🌍",reqLv:1, bonus:"Normal gameplay",           quirk:"standard",   color:"#4f8ef7"},
+  {id:1,name:"Asteroidebæltet",icon:"☄️",reqLv:5, bonus:"Stof-generering",       quirk:"matter",     color:"#f97316"},
+  {id:2,name:"Gasgiganten",icon:"🪐",reqLv:10,bonus:"Auto ×2, ustabilt",         quirk:"storm",      color:"#a78bfa"},
+  {id:3,name:"Sort Hul",icon:"🕳️",reqLv:15,bonus:"Mister 5% E/s, men 50× boost",quirk:"blackhole",  color:"#6366f1"},
+  {id:4,name:"Neutron Stjerne",icon:"💫",reqLv:20,bonus:"Auto-klik, støv-høst",  quirk:"neutron",    color:"#22d3ee"},
+  {id:5,name:"Galaksekerne",icon:"🌌",reqLv:25,bonus:"5× alt, bygn. koster mere",quirk:"galaxy",     color:"#f472b6"},
+  {id:6,name:"Quasar",icon:"🔆",reqLv:30,bonus:"Klik = jet-angreb",              quirk:"quasar",     color:"#fbbf24"},
+  {id:7,name:"Mørkt Stof Net",icon:"🕸️",reqLv:35,bonus:"Tilfældig chaos mode",  quirk:"chaos",      color:"#8b5cf6"},
+  {id:8,name:"Parallelunivers",icon:"🪞",reqLv:40,bonus:"Spejl-effekter",        quirk:"mirror",     color:"#34d399"},
+  {id:9,name:"Omega Punkt",icon:"∞",reqLv:50,bonus:"Absolut kaos, ultimativ",    quirk:"omega",      color:"#f87171"},
+];
+
+const BD = [
+  {id:"solar",  name:"Solpanel",      ico:"🔋",bc:15,     bp:.1,   rlv:1},
+  {id:"wind",   name:"Vindmølle",     ico:"🌬️",bc:100,    bp:.5,   rlv:1},
+  {id:"fusion", name:"Fusionsreaktor",ico:"⚛️",bc:1100,   bp:4,    rlv:3},
+  {id:"orbital",name:"Orbital Array", ico:"🛰️",bc:12000,  bp:20,   rlv:5},
+  {id:"dyson",  name:"Dyson Sfære",   ico:"🌟",bc:130000, bp:100,  rlv:8},
+  {id:"pulsar", name:"Pulsar Tap",    ico:"📡",bc:1.4e6,  bp:500,  rlv:10},
+  {id:"singul", name:"Singularitet",  ico:"⚫",bc:2e7,    bp:2500, rlv:15},
+  {id:"quantum",name:"Kvantegård",    ico:"⚗️",bc:3.3e8,  bp:12000,rlv:20},
+  {id:"nebula", name:"Tågesmedning",  ico:"🌫️",bc:5e9,    bp:60000,rlv:25},
+  {id:"galaxy", name:"Galaksemotor",  ico:"🌌",bc:7.5e10, bp:3e5,  rlv:30},
+  {id:"bigbang",name:"Big Bang Gen.", ico:"💥",bc:1e12,   bp:1.5e6,rlv:35},
+  {id:"time",   name:"Tidskrystal",   ico:"🔮",bc:1.5e13, bp:8e6,  rlv:40},
+  {id:"omni",   name:"Omnivers Tap",  ico:"🌀",bc:2e14,   bp:4e7,  rlv:45},
+  {id:"god",    name:"Gudpartikel",   ico:"🎆",bc:3e15,   bp:2e8,  rlv:48},
+  {id:"omega",  name:"Omega Motor",   ico:"∞", bc:5e16,   bp:1e9,  rlv:50},
+];
+BD.forEach(b=>G.buildings[b.id]=0);
+
+const UPGS = [
+  {id:"c1",t:"c",n:"Bedre Fingre",   i:"👆",c:100,  m:2,  d:"2× klik",  r:{cl:0}},
+  {id:"c2",t:"c",n:"Forstærket Klik",i:"⚡",c:500,  m:3,  d:"3× klik",  r:{cl:25}},
+  {id:"c3",t:"c",n:"Power Handsker", i:"🧤",c:2000, m:4,  d:"4× klik",  r:{lv:3}},
+  {id:"c4",t:"c",n:"Laserpeger",     i:"🔴",c:1e4,  m:5,  d:"5× klik",  r:{lv:5}},
+  {id:"c5",t:"c",n:"Kvante Tap",     i:"⚗️",c:5e4,  m:8,  d:"8× klik",  r:{lv:8}},
+  {id:"c6",t:"c",n:"Neuro Interface",i:"🧠",c:3e5,  m:10, d:"10× klik", r:{lv:12}},
+  {id:"c7",t:"c",n:"Realitetsbøj",   i:"🌀",c:2e6,  m:15, d:"15× klik", r:{lv:18}},
+  {id:"c8",t:"c",n:"Gud Tilstand",   i:"☝️",c:2e7,  m:25, d:"25× klik", r:{lv:25}},
+  {id:"c9",t:"c",n:"Dimensionsklik", i:"🎯",c:2e8,  m:50, d:"50× klik", r:{lv:35}},
+  {id:"c10",t:"c",n:"Omega Berøring",i:"∞", c:2e9,  m:100,d:"100× klik",r:{lv:45}},
+  {id:"a1",t:"a",n:"Sol Boost",      i:"☀️",c:200,  m:2,  d:"Solar ×2", r:{b_solar:5}},
+  {id:"a2",t:"a",n:"Vind Kraft",     i:"💨",c:1000, m:2,  d:"Vind ×2",  r:{b_wind:5}},
+  {id:"a3",t:"a",n:"Fusion Core",    i:"🔥",c:5000, m:2,  d:"Fusion ×2",r:{b_fusion:5}},
+  {id:"a4",t:"a",n:"Orbital Net",    i:"🛰️",c:25000,m:2,  d:"Orbit ×2", r:{b_orbital:5}},
+  {id:"a5",t:"a",n:"Dyson Net",      i:"⭐",c:2e5,  m:2,  d:"Dyson ×2", r:{b_dyson:5}},
+  {id:"a6",t:"a",n:"Pulsar Grid",    i:"📡",c:2e6,  m:3,  d:"Pulsar ×3",r:{b_pulsar:5}},
+  {id:"a7",t:"a",n:"Kvante Mesh",    i:"⚛️",c:2e7,  m:3,  d:"Kvante ×3",r:{b_quantum:5}},
+  {id:"a8",t:"a",n:"Tåge Sky",       i:"🌫️",c:2e8,  m:4,  d:"Tåge ×4",  r:{b_nebula:5}},
+  {id:"a9",t:"a",n:"Galakse Sync",   i:"🌌",c:2e9,  m:4,  d:"Galakse ×4",r:{b_galaxy:5}},
+  {id:"a10",t:"a",n:"Kosmisk Web",   i:"🕸️",c:2e10, m:5,  d:"Big Bang ×5",r:{b_bigbang:5}},
+  {id:"a11",t:"a",n:"Tidsstrøm",     i:"⏰",c:2e11, m:5,  d:"Tid ×5",   r:{b_time:5}},
+  {id:"a12",t:"a",n:"Omni Forst.",   i:"🔆",c:2e12, m:8,  d:"Omni ×8",  r:{b_omni:5}},
+  {id:"a13",t:"a",n:"Gud Flux",      i:"✨",c:2e13, m:10, d:"Gud ×10",  r:{b_god:5}},
+  {id:"a14",t:"a",n:"Omega Kaskade", i:"💫",c:2e14, m:15, d:"Omega ×15",r:{b_omega:5}},
+];
+
+// WORLD UPGRADES — per world, 5 each
+const WU = {
+  0:[{id:"w0_1",n:"Solstorme",    i:"🌞",c:500,  d:"Klik +50% energi"},{id:"w0_2",n:"Magnetfelt",i:"🧲",c:5000,d:"Sol-bygninger ×3"},{id:"w0_3",n:"Gravit.linse",i:"🔭",c:5e4,d:"2× al auto"},{id:"w0_4",n:"Heliosfære",i:"🌐",c:5e5,d:"Auto-klik /5s"},{id:"w0_5",n:"Asteroide Skjold",i:"🛡️",c:5e6,d:"Bygn. 20% billigere"}],
+  1:[{id:"w1_1",n:"Minedrift",    i:"⛏️",c:1e4, d:"Klik→0.1 stof"},{id:"w1_2",n:"Malmanalysator",i:"🔍",c:1e5,d:"Stof rate ×2"},{id:"w1_3",n:"Meteoritregn",i:"☄️",c:1e6,d:"Auto +50%"},{id:"w1_4",n:"Rumkraft",i:"🚀",c:1e7,d:"Klik ×5"},{id:"w1_5",n:"Tungmetalkerne",i:"💎",c:1e8,d:"Alt ×3 i Asteroide"}],
+  2:[{id:"w2_1",n:"Stormhøster",  i:"🌪️",c:5e4, d:"Auto ×2"},{id:"w2_2",n:"Gasekstraktion",i:"💨",c:5e5,d:"Energi ×3"},{id:"w2_3",n:"Plasma Linse",i:"🔵",c:5e6,d:"Klik ×10"},{id:"w2_4",n:"Kernetryk",i:"⚡",c:5e7,d:"Bygn. ×5"},{id:"w2_5",n:"Gasskjold",i:"🛡️",c:5e8,d:"Offline gains ×3"}],
+  3:[{id:"w3_1",n:"Tidevandsriver",i:"🌊",c:1e5,d:"Mørk rate ×3"},{id:"w3_2",n:"Spaghettifikation",i:"🍝",c:1e6,d:"Alt ×1.5"},{id:"w3_3",n:"Horisonten",i:"⭕",c:1e7,d:"Klik→mørk energi"},{id:"w3_4",n:"Hawking Stråling",i:"☢️",c:1e8,d:"1% energi/s passiv"},{id:"w3_5",n:"Singularitetsbro",i:"🌉",c:1e9,d:"Alt ×10 i Sort Hul"}],
+  4:[{id:"w4_1",n:"Pulsarbeat",    i:"💓",c:5e5,d:"Auto-klik /1s"},{id:"w4_2",n:"Neutronium",i:"⚪",c:5e6,d:"Bygn. 50% billigere"},{id:"w4_3",n:"Magnetar Felt",i:"🧲",c:5e7,d:"Støv rate ×5"},{id:"w4_4",n:"Kvark Fusion",i:"⚛️",c:5e8,d:"Klik ×20"},{id:"w4_5",n:"Neutronstorm",i:"🌩️",c:5e9,d:"Alt ×15 her"}],
+  5:[{id:"w5_1",n:"Galaktisk Vind",i:"💫",c:1e7, d:"Auto ×3"},{id:"w5_2",n:"Kerneenergi",i:"🌌",c:1e8,d:"Energi ×5"},{id:"w5_3",n:"Stjerneform.",i:"⭐",c:1e9,d:"1. bygning gratis"},{id:"w5_4",n:"Galaksespiral",i:"🌀",c:1e10,d:"Klik=1% auto/s"},{id:"w5_5",n:"Supermassivt",i:"🔲",c:1e11,d:"Alt ×25 her"}],
+  6:[{id:"w6_1",n:"Relativistisk Jet",i:"🚀",c:1e8,d:"Klik ×30"},{id:"w6_2",n:"Synkrotron",i:"🔄",c:1e9,d:"Auto ×8"},{id:"w6_3",n:"Quasar Puls",i:"📻",c:1e10,d:"Stof rate ×10"},{id:"w6_4",n:"Foton Torpedo",i:"💥",c:1e11,d:"Klik→alle ressourcer"},{id:"w6_5",n:"Quasar Resonans",i:"🎶",c:1e12,d:"Alt ×50 her"}],
+  7:[{id:"w7_1",n:"Mørke Filamenter",i:"🕸️",c:5e8,d:"Mørk ×20"},{id:"w7_2",n:"WIMP Detektor",i:"🔬",c:5e9,d:"Auto ×10"},{id:"w7_3",n:"Mørk Foton",i:"🌑",c:5e10,d:"Klik=5% af E"},{id:"w7_4",n:"Antimaterie Bro",i:"🌉",c:5e11,d:"Alt ×20"},{id:"w7_5",n:"Kosmisk Web",i:"∞",c:5e12,d:"Alt ×100 her"}],
+  8:[{id:"w8_1",n:"Spejlverden",    i:"🪞",c:1e10,d:"Dobbelt alt"},{id:"w8_2",n:"Dimensionsrift",i:"🌀",c:1e11,d:"Klik ×50"},{id:"w8_3",n:"Parallelstrøm",i:"⚡",c:1e12,d:"Auto ×25"},{id:"w8_4",n:"Kvantehopp",i:"🎲",c:1e13,d:"10× bonus /10s"},{id:"w8_5",n:"Uendelig Loop",i:"♾️",c:1e14,d:"Alt ×200 her"}],
+  9:[{id:"w9_1",n:"Apokalypse",     i:"🔱",c:1e12,d:"Alt ×10 perm."},{id:"w9_2",n:"Tidernes Ende",i:"⌛",c:1e13,d:"Klik ×100"},{id:"w9_3",n:"Omega Puls",i:"💫",c:1e14,d:"Auto ×50"},{id:"w9_4",n:"Skabelsens Kode",i:"🧬",c:1e15,d:"Bygn. uendelig"},{id:"w9_5",n:"Altet",i:"∞",c:1e16,d:"Alt ×1000 her"}],
+};
+
+// SKILL TREE
+const SKILLS = [
+  {id:"sk1", n:"Klik Mester",   i:"👆",maxLv:5, cost:u=>500*Math.pow(3,u),   desc:u=>`+${20*u}% klik kraft`,  req:null,     eff:"clickPct"},
+  {id:"sk2", n:"Auto Effekt",   i:"⚙️",maxLv:5, cost:u=>1000*Math.pow(3,u),  desc:u=>`+${20*u}% auto prod.`, req:null,     eff:"autoPct"},
+  {id:"sk3", n:"Crit Specialist",i:"💥",maxLv:5,cost:u=>2000*Math.pow(4,u),  desc:u=>`+${2*u}% crit chance`,req:"sk1",    eff:"critChance"},
+  {id:"sk4", n:"XP Booster",    i:"📈",maxLv:5, cost:u=>3000*Math.pow(3,u),  desc:u=>`+${30*u}% XP gain`,    req:null,     eff:"xpPct"},
+  {id:"sk5", n:"Ressource Sync",i:"🔗",maxLv:3, cost:u=>1e4*Math.pow(5,u),   desc:u=>`Sekundær res. ×${1+u}`,req:"sk2",   eff:"resMult"},
+  {id:"sk6", n:"Kosmisk Vilje", i:"🌌",maxLv:3, cost:u=>5e4*Math.pow(6,u),   desc:u=>`Alt ×${1+u}`,          req:"sk3",    eff:"allMult"},
+  {id:"sk7", n:"Tids Manipulation",i:"⏰",maxLv:3,cost:u=>1e5*Math.pow(8,u), desc:u=>`Offline ×${1+u}`,      req:"sk4",    eff:"offlineMult"},
+  {id:"sk8", n:"Boss Slayer",   i:"⚔️",maxLv:5, cost:u=>2e5*Math.pow(4,u),   desc:u=>`+${20*u}% boss skade`, req:"sk6",    eff:"bossDmg"},
+];
+SKILLS.forEach(s=>G.skills[s.id]=0);
+
+// RANDOM EVENTS
+const EVENTS = [
+  {id:"e1",name:"ENERGISTORM!",       icon:"⚡",desc:"5× energi i 15 sek",  dur:15,mult:5,  type:"energyMult"},
+  {id:"e2",name:"KLIK FEBER!",         icon:"🖱️",desc:"10× klik i 10 sek",  dur:10,mult:10, type:"clickMult"},
+  {id:"e3",name:"STJERNEREGN!",        icon:"🌟",desc:"3× alt i 20 sek",    dur:20,mult:3,  type:"allMult"},
+  {id:"e4",name:"KVANTE SPRING!",      icon:"⚗️",desc:"2× XP i 30 sek",    dur:30,mult:2,  type:"xpMult"},
+  {id:"e5",name:"KOSMISK GAVE!",       icon:"🎁",desc:"Instant 60s produktion",dur:3,mult:1, type:"instantGain"},
+  {id:"e6",name:"MØRK BØLGE!",        icon:"🌑",desc:"Mørk energi ×20 i 10s",dur:10,mult:20,type:"darkMult"},
+  {id:"e7",name:"GALAKTISK PULS!",     icon:"💫",desc:"Krit chance 50% i 15s",dur:15,mult:50,type:"critBoost"},
+];
+
+// BOSSES
+const BOSSES = [
+  {id:0,name:"Solflare",     icon:"🌞",baseHp:500,   xp:300, reward:"Klik kraft ×2 i 5 min"},
+  {id:1,name:"Asteroid Rex", icon:"☄️",baseHp:2000,  xp:800, reward:"Auto ×3 i 5 min"},
+  {id:2,name:"Stormguderne", icon:"🌪️",baseHp:8000,  xp:2000,reward:"Al ressource ×5 i 5 min"},
+  {id:3,name:"Sorte Orm",    icon:"🕳️",baseHp:30000, xp:5000,reward:"Prestige XP ×2 i 5 min"},
+  {id:4,name:"Pulsarkongen", icon:"💫",baseHp:1e5,   xp:1e4, reward:"Krit mult 20× i 5 min"},
+  {id:5,name:"Galaksefader", icon:"🌌",baseHp:5e5,   xp:4e4, reward:"Bygn. gratis i 2 min"},
+  {id:6,name:"Quasar Tyran", icon:"🔆",baseHp:2e6,   xp:1e5, reward:"Alt ×10 i 5 min"},
+  {id:7,name:"Skyggevævet",  icon:"🕸️",baseHp:1e7,   xp:4e5, reward:"Offline gains ×5 næste"},
+  {id:8,name:"Spejl-Mig",   icon:"🪞",baseHp:5e7,   xp:2e6, reward:"Klik = auto prod i 3 min"},
+  {id:9,name:"OMEGA",        icon:"∞", baseHp:2e8,   xp:1e7, reward:"ULTIMATIV KRAFT I 10 MIN"},
+];
+
+// ACHIEVEMENTS
+const ACHS = [
+  {id:"ac1", n:"Første Klik",  i:"👆",d:"Klik for første gang",     f:()=>G.totalClicks>=1},
+  {id:"ac2", n:"100 Klik",     i:"✌️",d:"100 klik i alt",            f:()=>G.totalClicks>=100},
+  {id:"ac3", n:"1K Klik",      i:"💪",d:"1.000 klik",                f:()=>G.totalClicks>=1000},
+  {id:"ac4", n:"100K Klik",    i:"🖐️",d:"100.000 klik",              f:()=>G.totalClicks>=1e5},
+  {id:"ac5", n:"1M Klik",      i:"🏆",d:"1.000.000 klik",            f:()=>G.totalClicks>=1e6},
+  {id:"ac6", n:"Speed Klicker",i:"⚡",d:"100 klik på 5 sek",         f:()=>clicksIn5>=100},
+  {id:"ac7", n:"Level 5",      i:"⭐",d:"Nå level 5",                f:()=>G.level>=5},
+  {id:"ac8", n:"Level 15",     i:"🌟",d:"Nå level 15",               f:()=>G.level>=15},
+  {id:"ac9", n:"Level 30",     i:"💫",d:"Nå level 30",               f:()=>G.level>=30},
+  {id:"ac10",n:"Level 50",     i:"👑",d:"Maksimalt level!",           f:()=>G.level>=50},
+  {id:"ac11",n:"2 Verdener",   i:"🌍",d:"Lås 2 verdener op",         f:()=>G.unlockedWorlds.length>=2},
+  {id:"ac12",n:"5 Verdener",   i:"🌌",d:"Lås 5 verdener op",         f:()=>G.unlockedWorlds.length>=5},
+  {id:"ac13",n:"10 Verdener",  i:"∞", d:"Alle verdener låst op",     f:()=>G.unlockedWorlds.length>=10},
+  {id:"ac14",n:"Millionær",    i:"💰",d:"1M energi optjent",          f:()=>G.totalEarned>=1e6},
+  {id:"ac15",n:"Billionær",    i:"💎",d:"1 milliard optjent",         f:()=>G.totalEarned>=1e9},
+  {id:"ac16",n:"CRIT!",        i:"💥",d:"Din første crit-klik",       f:()=>G.totalCrits>=1},
+  {id:"ac17",n:"100 Crits",    i:"🎯",d:"100 crit-kliks",             f:()=>G.totalCrits>=100},
+  {id:"ac18",n:"Event Jæger",  i:"🎁",d:"Fang 3 events",             f:()=>G.totalEventsCaught>=3},
+  {id:"ac19",n:"Boss Dræber",  i:"⚔️",d:"Dræb din første boss",       f:()=>G.totalBossKills>=1},
+  {id:"ac20",n:"Boss Mester",  i:"🗡️",d:"Dræb 5 bosser",             f:()=>G.totalBossKills>=5},
+  {id:"ac21",n:"Skill Mester", i:"🌿",d:"Lås 3 skills op",           f:()=>Object.values(G.skills).filter(v=>v>0).length>=3},
+  {id:"ac22",n:"AFK Helten",   i:"💤",d:"30 min spiltid",            f:()=>G.playTime>=1800},
+  {id:"ac23",n:"Prestige I",   i:"⭐",d:"Prestige for første gang",  f:()=>G.prestigeStars>=1},
+  {id:"ac24",n:"10 Bygninger", i:"🏗️",d:"10 bygninger i alt",        f:()=>totB()>=10},
+  {id:"ac25",n:"100 Bygninger",i:"🏙️",d:"100 bygninger i alt",       f:()=>totB()>=100},
+];
+let achs = new Set();
+let clicksIn5 = 0, clicksIn5Timer = 0;
+let bossPostBuff = null, bossPostBuffLeft = 0;
+
+// ═══════════════════════════════════════════════════════════
+//  CORE MATH
+// ═══════════════════════════════════════════════════════════
+function xpForLevel(lv){ return Math.floor(100 * Math.pow(lv, 1.85)); }
+function totB(){ return Object.values(G.buildings).reduce((a,b)=>a+b,0); }
+function getBCost(b){
+  let c = Math.floor(b.bc * Math.pow(1.15, G.buildings[b.id]||0));
+  if(G.buyWorldUpgs['w0_5']) c=Math.floor(c*.8);
+  if(G.buyWorldUpgs['w4_2']) c=Math.floor(c*.5);
+  return c;
+}
+
+function getSkillVal(id){ return G.skills[id]||0; }
+
+function calcCP(){
+  let p = 1;
+  UPGS.filter(u=>u.t==="c"&&G.buyUpgs[u.id]).forEach(u=>p*=u.m);
+  const wu=G.buyWorldUpgs;
+  if(wu['w1_4'])p*=5; if(wu['w2_3'])p*=10; if(wu['w4_4'])p*=20;
+  if(wu['w6_1'])p*=30; if(wu['w8_2'])p*=50; if(wu['w9_2'])p*=100;
+  // Skill
+  p *= 1 + getSkillVal('sk1')*.2;
+  p *= 1 + getSkillVal('sk6')*1;
+  // Boss buff
+  if(bossPostBuff==='clickX2') p*=2;
+  // World quirks
+  if(G.currentWorld===3) p*=50; // black hole click boost
+  // Event
+  if(G.activeEvent==='clickMult') p*=G.eventMult||1;
+  if(G.activeEvent==='allMult')   p*=G.eventMult||1;
+  return Math.floor(p * G.prestigeMult);
+}
+
+function calcAPS(){
+  let t=0;
+  BD.forEach(b=>{
+    const c=G.buildings[b.id]||0; if(!c)return;
+    let pr=b.bp*c;
+    UPGS.filter(u=>u.t==="a"&&u.r&&u.r['b_'+b.id]&&G.buyUpgs[u.id]).forEach(u=>pr*=u.m);
+    if(G.buyWorldUpgs['w0_2']&&b.id==='solar')pr*=3;
+    if(G.buyWorldUpgs['w2_4'])pr*=5;
+    t+=pr;
+  });
+  let m=1;
+  const wu=G.buyWorldUpgs;
+  if(wu['w0_3'])m*=2; if(wu['w1_3'])m*=1.5; if(wu['w2_1'])m*=2; if(wu['w2_2'])m*=3;
+  if(wu['w3_2'])m*=1.5; if(wu['w5_1'])m*=3; if(wu['w5_2'])m*=5; if(wu['w6_2'])m*=8;
+  if(wu['w7_2'])m*=10; if(wu['w8_3'])m*=25; if(wu['w9_3'])m*=50;
+  if(wu['w3_5'])m*=10; if(wu['w4_5'])m*=15; if(wu['w5_5'])m*=25; if(wu['w6_5'])m*=50;
+  if(wu['w7_5'])m*=100;if(wu['w8_5'])m*=200;if(wu['w9_5'])m*=1000;if(wu['w7_4'])m*=20;
+  if(wu['w9_1'])m*=10;
+  // Skill
+  m *= 1 + getSkillVal('sk2')*.2;
+  m *= 1 + getSkillVal('sk6')*1;
+  // World quirks
+  if(G.currentWorld===2) m*=2;   // gas giant
+  if(G.currentWorld===5) m*=5;   // galaxy core
+  if(G.currentWorld===3) m*=.1;  // black hole penalty
+  // Boss buff
+  if(bossPostBuff==='autoX3') m*=3;
+  if(bossPostBuff==='allX5') m*=5;
+  // Event
+  if(G.activeEvent==='energyMult') m*=G.eventMult||1;
+  if(G.activeEvent==='allMult')    m*=G.eventMult||1;
+  m *= G.prestigeMult;
+  return t*m;
+}
+
+function getCritChance(){
+  let c = G.critChance;
+  c += getSkillVal('sk3')*.02;
+  if(G.activeEvent==='critBoost') c=.5;
+  return Math.min(c,.75);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CLICK
+// ═══════════════════════════════════════════════════════════
+function doClick(e){
+  const isCrit = Math.random() < getCritChance();
+  let p = calcCP();
+  if(isCrit){ p *= G.critMult; G.totalCrits++; }
+
+  // World 5_4: klik = 1% of auto/s
+  if(G.buyWorldUpgs['w5_4']) p += calcAPS()*.01;
+  // World 7_3: 5% of current energy
+  if(G.buyWorldUpgs['w7_3']) p += G.energy*.05;
+
+  G.energy += p; G.totalEarned += p; G.totalClicks++;
+  clicksIn5++; clicksIn5Timer = Date.now();
+
+  if(G.buyWorldUpgs['w1_1']) G.matter += p*.1;
+  if(G.buyWorldUpgs['w3_3']) G.dark += p*.1;
+  if(G.buyWorldUpgs['w6_4']){ G.matter+=p*.05;G.dark+=p*.05;G.stardust+=p*.02; }
+
+  const xpG = Math.max(1,Math.floor(G.level*.5)) * (1+getSkillVal('sk4')*.3) * (G.activeEvent==='xpMult'?G.eventMult||1:1);
+  addXP(xpG);
+  sfxClick();
+
+  // Floaters
+  const ft=document.createElement('div');
+  ft.className='ft'+(isCrit?' crit':'');
+  ft.textContent=(isCrit?'💥 CRIT! ×'+G.critMult+' ':'')+'+'+fmt(p)+'⚡';
+  ft.style.cssText=`left:${e.clientX-20}px;top:${e.clientY-20}px`;
+  document.body.appendChild(ft); setTimeout(()=>ft.remove(),1050);
+
+  if(isCrit){
+    sfxCrit();
+    const btn=document.getElementById('big-btn');
+    btn.classList.add('crit-anim');
+    setTimeout(()=>btn.classList.remove('crit-anim'),320);
+    const cr=document.getElementById('crit-ring');
+    cr.classList.remove('show');void cr.offsetWidth;cr.classList.add('show');
+    // XP bonus for crit
+    const xft=document.createElement('div');xft.className='ft xp';
+    xft.textContent='+'+fmt(xpG*5)+' XP';
+    xft.style.cssText=`left:${e.clientX+10}px;top:${e.clientY-30}px`;
+    document.body.appendChild(xft);setTimeout(()=>xft.remove(),1000);
+    addXP(xpG*4);
+  }
+
+  const btn=document.getElementById('big-btn');
+  btn.style.boxShadow='0 0 0 16px rgba(79,142,247,.1),0 0 50px rgba(79,142,247,.25),var(--shl)';
+  btn.style.borderColor='rgba(79,142,247,.65)';
+  setTimeout(()=>{btn.style.boxShadow='';btn.style.borderColor='';},140);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  XP / LEVEL
+// ═══════════════════════════════════════════════════════════
+function addXP(amt){
+  if(G.level>=50)return;
+  G.xp+=amt;
+  while(G.xp>=xpForLevel(G.level)&&G.level<50){
+    G.xp-=xpForLevel(G.level);
+    G.level++;
+    onLevelUp();
+  }
+  updateLvUI();
+}
+
+function onLevelUp(){
+  sfxLvlUp();
+  const lv=G.level, rw=[];
+  rw.push({i:'⬆️',t:'Level '+lv+' — '+(LV_NAMES[lv]||'')});
+  WORLDS.filter(w=>w.reqLv===lv&&!G.unlockedWorlds.includes(w.id)).forEach(w=>{
+    G.unlockedWorlds.push(w.id);
+    rw.push({i:w.icon,t:'Ny verden: '+w.name+'!'});
+    notify(w.icon+' Ny verden låst op: '+w.name+'!','purple');
+  });
+  BD.filter(b=>b.rlv===lv).forEach(b=>rw.push({i:b.ico,t:'Ny bygning: '+b.name}));
+  UPGS.filter(u=>u.r&&u.r.lv===lv).forEach(u=>rw.push({i:u.i,t:'Ny upgrade: '+u.n}));
+  showLvlPopup(lv,rw);
+  // Try to spawn boss on certain levels
+  if([5,10,15,20,25,30,35,40,45,50].includes(lv)) spawnBoss(Math.floor(lv/5)-1);
+  renderAll();
+}
+
+function showLvlPopup(lv,rw){
+  const icons=['⭐','🌟','💫','✨','👑','🚀','🌌','∞','🔱','💥'];
+  document.getElementById('lv-ico').textContent=icons[Math.floor(lv/6)%icons.length];
+  document.getElementById('lv-title').textContent='Level Up!';
+  document.getElementById('lv-sub').textContent='Level '+lv+' — '+(LV_NAMES[lv]||'');
+  document.getElementById('lv-rw').innerHTML=rw.map(r=>`<div class="lv-rw-row">${r.i} <span>${r.t}</span></div>`).join('');
+  document.getElementById('lv-overlay').classList.add('show');
+}
+function closeLvlUp(){ document.getElementById('lv-overlay').classList.remove('show'); }
+
+function updateLvUI(){
+  const lv=G.level,needed=xpForLevel(lv);
+  document.getElementById('lv-badge').textContent='LVL '+lv;
+  document.getElementById('lv-name').textContent=LV_NAMES[lv]||'MAX';
+  const pct=lv>=50?100:Math.min(100,(G.xp/needed)*100);
+  document.getElementById('xp-bar').style.width=pct+'%';
+  document.getElementById('xp-cur').textContent=lv>=50?'MAX':fmt(G.xp);
+  document.getElementById('xp-max').textContent=lv>=50?'':' / '+fmt(needed)+' XP';
+  // Next unlock hint
+  const nw=WORLDS.find(w=>!G.unlockedWorlds.includes(w.id));
+  const nb=BD.find(b=>b.rlv>lv);
+  if(nw&&lv<nw.reqLv) document.getElementById('next-unlock').textContent='🔓 Næste: '+nw.name+' på level '+nw.reqLv;
+  else if(nb) document.getElementById('next-unlock').textContent='🏗️ Næste bygning: '+nb.name+' (lv '+nb.rlv+')';
+  else document.getElementById('next-unlock').textContent='✅ Alt låst op!';
+  document.getElementById('pres-label').textContent='Prestige ★'+G.prestigeStars+' · Mult ×'+G.prestigeMult.toFixed(2);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  EVENTS
+// ═══════════════════════════════════════════════════════════
+let nextEvent = 30 + Math.random()*30;
+let eventTimer = 0;
+
+function tickEvents(dt){
+  eventTimer += dt;
+  if(eventTimer >= nextEvent && !G.bossActive){
+    triggerEvent();
+    eventTimer = 0;
+    nextEvent = 25 + Math.random()*35;
+  }
+  if(G.activeEvent && G.eventTimeLeft > 0){
+    G.eventTimeLeft -= dt;
+    const pct = Math.max(0,(G.eventTimeLeft/G.eventDur)*100);
+    document.getElementById('ev-timer-bar').style.width = pct+'%';
+    if(G.eventTimeLeft <= 0){
+      // Instant gain fires at start, so just clear
+      G.activeEvent=null;G.eventMult=1;
+      document.getElementById('event-banner').classList.remove('show');
+    }
+  }
+}
+
+function triggerEvent(){
+  const ev = EVENTS[Math.floor(Math.random()*EVENTS.length)];
+  G.activeEvent = ev.type;
+  G.eventMult = ev.mult;
+  G.eventTimeLeft = ev.dur;
+  G.eventDur = ev.dur;
+  G.totalEventsCaught++;
+  sfxEvent();
+  if(ev.type==='instantGain'){
+    const g=calcAPS()*60;G.energy+=g;G.totalEarned+=g;
+    G.activeEvent=null;G.eventMult=1;
+    const ft=document.createElement('div');ft.className='ft bonus';ft.textContent='🎁 +'+fmt(g)+'⚡';
+    ft.style.cssText='left:50%;top:40%;transform:translateX(-50%)';
+    document.body.appendChild(ft);setTimeout(()=>ft.remove(),1200);
+  }
+  document.getElementById('ev-icon').textContent=ev.icon;
+  document.getElementById('ev-title').textContent=ev.name;
+  document.getElementById('ev-desc').textContent=ev.desc;
+  document.getElementById('event-banner').classList.add('show');
+  notify(ev.icon+' EVENT: '+ev.name+' — '+ev.desc,'pink');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  BOSS FIGHTS
+// ═══════════════════════════════════════════════════════════
+function spawnBoss(bossIdx){
+  const b = BOSSES[Math.min(bossIdx, BOSSES.length-1)];
+  G.bossActive = true;
+  G.bossHp = Math.floor(b.baseHp * (1+G.level*0.5));
+  G.bossMaxHp = G.bossHp;
+  G.bossId = b.id;
+  sfxBoss();
+  document.getElementById('boss-ico').textContent = b.icon;
+  document.getElementById('boss-name').textContent = b.name;
+  document.getElementById('boss-reward').textContent = '🎁 '+b.reward;
+  document.getElementById('boss-panel').classList.add('show');
+  updateBossUI();
+  notify(b.icon+' BOSS SPAWNER: '+b.name+' — kæmp nu!','red');
+}
+
+function attackBoss(){
+  if(!G.bossActive)return;
+  const dmg = Math.floor((calcCP()+calcAPS()*0.5) * (1+getSkillVal('sk8')*.2));
+  G.bossHp = Math.max(0, G.bossHp - dmg);
+  sfxCrit();
+  updateBossUI();
+  if(G.bossHp<=0) defeatBoss();
+}
+
+function updateBossUI(){
+  const pct=Math.max(0,(G.bossHp/G.bossMaxHp)*100);
+  document.getElementById('boss-hp-bar').style.width=pct+'%';
+  document.getElementById('boss-hp-txt').textContent='HP: '+fmt(G.bossHp)+' / '+fmt(G.bossMaxHp);
+  document.getElementById('boss-dps').textContent='DPS: '+fmt(calcAPS());
+}
+
+function defeatBoss(){
+  const b = BOSSES[G.bossId];
+  G.totalBossKills++;
+  G.bossActive = false;
+  const xpR = b.xp*(1+G.prestigeStars*.1);
+  addXP(xpR);
+  sfxLvlUp();
+  // Apply boss buff
+  bossPostBuff = ['clickX2','autoX3','allX5'][G.bossId%3];
+  bossPostBuffLeft = 300;
+  notify('⚔️ BOSS BESEJRET: '+b.name+'! +'+fmt(xpR)+' XP','gold');
+  document.getElementById('boss-panel').classList.remove('show');
+  // Auto-do damage from APS
+  G.bossHp = 0;
+}
+
+function tickBoss(dt){
+  if(!G.bossActive) return;
+  // Auto-damage from APS
+  const autoDmg = calcAPS() * dt * .01;
+  G.bossHp = Math.max(0, G.bossHp - autoDmg);
+  updateBossUI();
+  if(G.bossHp<=0) defeatBoss();
+  if(bossPostBuffLeft>0){ bossPostBuffLeft-=dt; if(bossPostBuffLeft<=0){ bossPostBuff=null; }}
+}
+
+// ═══════════════════════════════════════════════════════════
+//  BUY
+// ═══════════════════════════════════════════════════════════
+function buyBuilding(id){
+  const b=BD.find(x=>x.id===id);
+  if(!b||G.level<b.rlv)return;
+  const c=getBCost(b);
+  if(G.energy<c)return;
+  G.energy-=c; G.buildings[id]++;
+  addXP(Math.floor(Math.log10(c+1)*5));
+  sfxBuy();
+  renderBuildings();renderUpgrades();
+}
+function buyUpgrade(id){
+  const u=UPGS.find(x=>x.id===id);
+  if(!u||G.buyUpgs[id]||G.energy<u.c)return;
+  G.energy-=u.c; G.buyUpgs[id]=true;
+  addXP(Math.floor(Math.log10(u.c+1)*10));
+  sfxBuy();
+  renderUpgrades();
+  notify('⬆️ '+u.n+' aktiveret!','green');
+}
+function buyWorldUpgrade(wid,uid){
+  const wUpgs=WU[wid]||[];
+  const u=wUpgs.find(x=>x.id===uid);
+  if(!u||G.buyWorldUpgs[uid]||G.energy<u.c)return;
+  G.energy-=u.c; G.buyWorldUpgs[uid]=true;
+  addXP(Math.floor(Math.log10(u.c+1)*20));
+  sfxBuy();
+  renderWorldUpgrades();
+  notify(WORLDS[wid].icon+' '+u.n+' aktiveret!','purple');
+}
+function buySkill(id){
+  const sk=SKILLS.find(x=>x.id===id);
+  if(!sk)return;
+  const lv=G.skills[id]||0;
+  if(lv>=sk.maxLv)return;
+  if(sk.req&&!(G.skills[sk.req]>0))return;
+  const c=sk.cost(lv);
+  if(G.energy<c)return;
+  G.energy-=c; G.skills[id]=(lv+1);
+  sfxBuy();
+  renderSkillTree();
+  notify('🌿 Skill opgraderet: '+sk.n+' → Lv '+(lv+1),'green');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PRESTIGE
+// ═══════════════════════════════════════════════════════════
+function doPrestige(){
+  if(G.level<50)return;
+  G.prestigeStars++;
+  G.prestigeMult=1+G.prestigeStars*.15;
+  G.energy=0;G.matter=0;G.dark=0;G.stardust=0;
+  G.totalEarned=0;G.buyUpgs={};G.buyWorldUpgs={};
+  BD.forEach(b=>G.buildings[b.id]=0);
+  G.unlockedWorlds=[0];G.currentWorld=0;
+  G.level=1;G.xp=0;
+  SKILLS.forEach(s=>G.skills[s.id]=0);
+  notify('⭐ PRESTIGE! Stjerner: '+G.prestigeStars+' | Mult: ×'+G.prestigeMult.toFixed(2),'gold');
+  renderAll();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MAIN TICK — uses requestAnimationFrame
+// ═══════════════════════════════════════════════════════════
+let autoClickTimer5=0, autoClickTimer1=0, randTimer=0;
+const graphData=[];let graphTick=0;
+
+function gameTick(ts){
+  const now=Date.now(), dt=(now-G.lastTick)/1000;
+  G.lastTick=now; G.playTime+=dt;
+
+  const aps=calcAPS(), g=aps*dt;
+  G.energy+=g; G.totalEarned+=g;
+
+  // Secondary resources
+  if(G.buyWorldUpgs['w1_2']) G.matter+=g*.1;
+  if(G.buyWorldUpgs['w3_1']) G.dark+=g*.1;
+  if(G.buyWorldUpgs['w4_3']) G.stardust+=g*.05;
+  // Hawking radiation
+  if(G.buyWorldUpgs['w3_4']){ const h=G.energy*.01*dt;G.energy+=h;G.totalEarned+=h; }
+  // Black hole drain
+  if(G.currentWorld===3){ G.energy=Math.max(0,G.energy-G.energy*.05*dt); }
+  // Auto-clicks
+  if(G.buyWorldUpgs['w0_4']){ autoClickTimer5+=dt;if(autoClickTimer5>=5){G.energy+=calcCP();autoClickTimer5=0;}}
+  if(G.buyWorldUpgs['w4_1']){ autoClickTimer1+=dt;if(autoClickTimer1>=1){G.energy+=calcCP();autoClickTimer1=0;}}
+  // Random 10× bonus (w8_4)
+  if(G.buyWorldUpgs['w8_4']){ randTimer+=dt;if(randTimer>=10){const b=aps*10;G.energy+=b;G.totalEarned+=b;randTimer=0;}}
+  // Chaos world (7): random multiplier spike every 15s
+  if(G.currentWorld===7){ randTimer+=dt;if(randTimer>=15){const sp=(Math.random()<.5?5:.1);G.energy+=aps*sp;randTimer=0;}}
+
+  // XP from auto
+  addXP(aps*dt*.001*(1+getSkillVal('sk4')*.3));
+  // Click counter decay
+  if(Date.now()-clicksIn5Timer>5000) clicksIn5=0;
+
+  tickEvents(dt);
+  tickBoss(dt);
+  checkWorldUnlocks();
+  checkAchs();
+
+  // Update display every frame
+  updateDisplay(aps);
+
+  // Graph data (every 2s)
+  graphTick+=dt;
+  if(graphTick>2){ graphData.push(aps);if(graphData.length>40)graphData.shift();graphTick=0;drawGraph(); }
+
+  requestAnimationFrame(gameTick);
+}
+
+function checkWorldUnlocks(){
+  WORLDS.forEach(w=>{ if(G.level>=w.reqLv&&!G.unlockedWorlds.includes(w.id)) G.unlockedWorlds.push(w.id); });
+}
+
+function updateDisplay(aps){
+  document.getElementById('r-e').textContent=fmt(G.energy);
+  document.getElementById('r-er').textContent='+'+fmt(aps)+'/s';
+  if(G.matter>0||G.buyWorldUpgs['w1_1']||G.buyWorldUpgs['w1_2']){
+    document.getElementById('r-m').textContent=fmt(G.matter);
+    document.getElementById('r-mr').textContent='+'+fmt(aps*.1)+'/s';
+    document.getElementById('r-mr').style.color='';
+  }
+  if(G.dark>0||G.buyWorldUpgs['w3_1']){
+    document.getElementById('r-d').textContent=fmt(G.dark);
+    document.getElementById('r-dr').textContent='+'+fmt(aps*.1)+'/s';
+    document.getElementById('r-dr').style.color='';
+  }
+  if(G.stardust>0||G.buyWorldUpgs['w4_3']){
+    document.getElementById('r-s').textContent=fmt(G.stardust);
+    document.getElementById('r-sr').textContent='+'+fmt(aps*.05)+'/s';
+    document.getElementById('r-sr').style.color='';
+  }
+  document.getElementById('tc-d').textContent=fmt(G.totalClicks);
+  document.getElementById('cp-d').textContent=fmt(calcCP());
+  document.getElementById('aps-d').textContent=fmt(aps);
+  document.getElementById('cr-d').textContent=Math.round(getCritChance()*100)+'%';
+  document.getElementById('pres-btn').disabled=G.level<50;
+  document.getElementById('p-cnt').textContent=G.prestigeStars;
+  document.getElementById('p-gain').textContent=Math.round((G.prestigeStars+1)*15);
+  updateLvUI();
+  updateBAff();
+  updateNextGoals();
+}
+
+function updateNextGoals(){
+  const el=document.getElementById('next-goals');
+  const aps=calcAPS();
+  const goals=[];
+  // Next building
+  const nb=BD.find(b=>G.level>=b.rlv);
+  if(nb){ const c=getBCost(nb),pct=Math.min(100,(G.energy/c)*100);goals.push({l:'Næste bygning: '+nb.name,v:fmt(G.energy)+'/'+fmt(c),pct,col:'#4f8ef7'}); }
+  // Next world
+  const nw=WORLDS.find(w=>!G.unlockedWorlds.includes(w.id));
+  if(nw){ const pct=Math.min(100,(G.level/nw.reqLv)*100);goals.push({l:'Næste verden: '+nw.name+' (lv '+nw.reqLv+')',v:'Lv '+G.level+'/'+nw.reqLv,pct,col:'#a78bfa'}); }
+  // XP to next level
+  if(G.level<50){ const needed=xpForLevel(G.level),pct=Math.min(100,(G.xp/needed)*100);goals.push({l:'Næste level ('+G.level+' → '+(G.level+1)+')',v:fmt(G.xp)+'/'+fmt(needed)+' XP',pct,col:'#34d399'}); }
+  el.innerHTML=goals.map(g=>`
+    <div class="nx-row"><span class="nx-label">${g.l}</span><span class="nx-val">${g.v}</span></div>
+    <div class="nx-bar" style="margin-bottom:7px;"><div class="nx-fill" style="width:${g.pct}%;background:${g.col}"></div></div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  GRAPH
+// ═══════════════════════════════════════════════════════════
+function drawGraph(){
+  const canvas=document.getElementById('graph-canvas');
+  if(!canvas)return;
+  canvas.width=canvas.offsetWidth||300;canvas.height=80;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  if(graphData.length<2)return;
+  const mx=Math.max(...graphData,.1);
+  ctx.strokeStyle='rgba(79,142,247,.6)';ctx.lineWidth=1.5;ctx.beginPath();
+  graphData.forEach((v,i)=>{
+    const x=(i/(graphData.length-1))*canvas.width;
+    const y=canvas.height-(v/mx)*(canvas.height-8)-4;
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+  // Fill
+  ctx.fillStyle='rgba(79,142,247,.08)';ctx.beginPath();
+  graphData.forEach((v,i)=>{const x=(i/(graphData.length-1))*canvas.width;const y=canvas.height-(v/mx)*(canvas.height-8)-4;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+  ctx.lineTo(canvas.width,canvas.height);ctx.lineTo(0,canvas.height);ctx.closePath();ctx.fill();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RENDER FUNCTIONS
+// ═══════════════════════════════════════════════════════════
+function renderBuildings(){
+  const el=document.getElementById('bldgs');el.innerHTML='';
+  BD.forEach(b=>{
+    const c=G.buildings[b.id]||0,cost=getBCost(b);
+    const lkd=G.level<b.rlv,can=!lkd&&G.energy>=cost;
+    const row=document.createElement('div');row.className='b-row'+(can?' af':lkd?' lkd':'');
+    row.innerHTML=`
+      <div class="b-ico">${b.ico}</div>
+      <div class="b-inf">
+        <div class="b-name">${b.name}</div>
+        <div class="b-prod">${c>0?fmt(b.bp*c)+'/s':fmt(b.bp)+'/s'}</div>
+        ${lkd?`<div class="b-req">🔒 Level ${b.rlv}</div>`:''}
+        <div class="b-pg"><div class="b-pgf" style="width:${Math.min(c,100)}%"></div></div>
+      </div>
+      <div class="b-cnt">${c}</div>
+      <button class="b-btn" onclick="buyBuilding('${b.id}')"${can?'':' disabled'}>${lkd?'🔒':fmt(cost)+'⚡'}</button>`;
+    el.appendChild(row);
+  });
+}
+function updateBAff(){
+  const rows=document.querySelectorAll('.b-row');
+  BD.forEach((b,i)=>{
+    if(!rows[i])return;
+    const lkd=G.level<b.rlv,can=!lkd&&G.energy>=getBCost(b);
+    rows[i].className='b-row'+(can?' af':lkd?' lkd':'');
+    const btn=rows[i].querySelector('.b-btn');if(btn)btn.disabled=!can;
+  });
+}
+
+function renderUpgrades(){
+  const ce=document.getElementById('click-upgs'),ae=document.getElementById('auto-upgs');
+  ce.innerHTML='';ae.innerHTML='';
+  const q=(document.getElementById('upg-search')?.value||'').toLowerCase();
+  UPGS.forEach(u=>{
+    if(G.buyUpgs[u.id])return;
+    if(q&&!u.n.toLowerCase().includes(q)&&!u.d.toLowerCase().includes(q))return;
+    let vis=true;
+    if(u.r){
+      if(u.r.cl&&G.totalClicks<u.r.cl)vis=false;
+      if(u.r.lv&&G.level<u.r.lv)vis=false;
+      Object.entries(u.r).forEach(([k,v])=>{if(k.startsWith('b_')&&G.buildings[k.slice(2)]<v)vis=false;});
+    }
+    if(!vis)return;
+    const can=G.energy>=u.c;
+    const btn=document.createElement('button');btn.className='upg-btn'+(can?' af':'');
+    const bought=totB();
+    btn.innerHTML=`<span class="ub-ico">${u.i}</span><div><div class="ub-name">${u.n}</div><div class="ub-desc">${u.d}</div><div class="ub-cost">${fmt(u.c)} ⚡</div></div>`;
+    btn.onclick=()=>{btn.classList.add('anim-buy');setTimeout(()=>btn.classList.remove('anim-buy'),350);buyUpgrade(u.id);};
+    if(u.t==='c')ce.appendChild(btn);else ae.appendChild(btn);
+  });
+}
+
+function renderWorldUpgrades(){
+  const wid=G.currentWorld,w=WORLDS[wid];
+  const el=document.getElementById('world-upgs');el.innerHTML='';
+  document.getElementById('wu-label').textContent=w.icon+' '+w.name+' — Eksklusive Upgrades';
+  const wUpgs=WU[wid]||[];
+  wUpgs.forEach(u=>{
+    const bought=G.buyWorldUpgs[u.id],can=!bought&&G.energy>=u.c;
+    const btn=document.createElement('button');btn.className='upg-btn'+(can?' af':'');btn.disabled=bought;btn.style.opacity=bought?'.5':'';
+    btn.innerHTML=`<span class="ub-ico">${u.i}</span><div><div class="ub-name">${u.n}${bought?' ✓':''}</div><div class="ub-desc">${u.d}</div><div class="ub-world">${w.icon} Eksklusiv for ${w.name}</div>${!bought?`<div class="ub-cost">${fmt(u.c)} ⚡</div>`:'<div class="ub-cost" style="color:var(--green)">Købt</div>'}</div>`;
+    if(!bought)btn.onclick=()=>{btn.classList.add('anim-buy');setTimeout(()=>btn.classList.remove('anim-buy'),350);buyWorldUpgrade(wid,u.id);};
+    el.appendChild(btn);
+  });
+}
+
+function renderWorldsNav(){
+  const el=document.getElementById('worlds-nav');el.innerHTML='';
+  WORLDS.forEach(w=>{
+    const ul=G.unlockedWorlds.includes(w.id),act=G.currentWorld===w.id;
+    const d=document.createElement('div');d.className='w-nav-btn'+(act?' act-w':!ul?' lkd-w':'');
+    d.innerHTML=`<div class="wnb-ico">${w.icon}</div><div class="wnb-t"><div class="wnb-name">${w.name}</div><div class="wnb-sub">${ul?w.quirk==='blackhole'?'⚠️ '+w.bonus:w.bonus:'Kræver level '+w.reqLv}</div>${!ul?`<div class="wnb-lk">🔒 Level ${w.reqLv}</div>`:''}</div>${act?'<div class="act-dot"></div>':''}`;
+    if(ul)d.onclick=()=>{
+      G.currentWorld=w.id;
+      document.getElementById('w-icon').textContent=w.icon;
+      document.getElementById('w-name').textContent=w.name;
+      document.getElementById('btn-icon').textContent=w.icon;
+      renderWorldsNav();renderWorldUpgrades();
+    };
+    el.appendChild(d);
+  });
+}
+
+function renderSkillTree(){
+  const el=document.getElementById('skill-tree');el.innerHTML='';
+  SKILLS.forEach(sk=>{
+    const lv=G.skills[sk.id]||0,maxed=lv>=sk.maxLv;
+    const locked=sk.req&&!(G.skills[sk.req]>0);
+    const cost=locked?null:sk.cost(lv);
+    const can=!locked&&!maxed&&cost&&G.energy>=cost;
+    const btn=document.createElement('div');btn.className='skill-btn'+(locked?' locked-sk':maxed?' maxed-sk':'');
+    btn.innerHTML=`
+      <div class="sk-top"><span class="sk-ico">${sk.i}</span><span class="sk-name">${sk.n}</span><span class="sk-lv">${lv}/${sk.maxLv}</span></div>
+      <div class="sk-desc">${maxed?'✅ Max level':locked?'🔒 Kræver '+sk.req:sk.desc(lv)}</div>
+      ${!maxed&&!locked?`<div class="sk-cost">${fmt(cost)} ⚡</div>`:''}
+      <div class="sk-bar"><div class="sk-bar-fill" style="width:${(lv/sk.maxLv)*100}%"></div></div>`;
+    if(can)btn.onclick=()=>buySkill(sk.id);
+    el.appendChild(btn);
+  });
+}
+
+function renderAchs(){
+  const el=document.getElementById('ach-grid');el.innerHTML='';
+  document.getElementById('ach-tot').textContent=ACHS.length;
+  ACHS.forEach(a=>{
+    const u=achs.has(a.id);
+    const item=document.createElement('div');item.className='ai'+(u?' ul':' lk');item.setAttribute('data-tip',a.d);
+    item.innerHTML=`<div class="ai-i">${a.i}</div><div class="ai-n">${a.n}</div>`;
+    el.appendChild(item);
+  });
+  document.getElementById('ach-cnt').textContent=achs.size;
+}
+
+function renderStats(){
+  document.getElementById('stats-panel').innerHTML=`
+    <div class="str"><span class="sl2">Level</span><span class="sv">${G.level} — ${LV_NAMES[G.level]||'Max'}</span></div>
+    <div class="str"><span class="sl2">Total klik</span><span class="sv">${fmt(G.totalClicks)}</span></div>
+    <div class="str"><span class="sl2">Crit klik</span><span class="sv">${fmt(G.totalCrits)}</span></div>
+    <div class="str"><span class="sl2">Klik kraft</span><span class="sv">${fmt(calcCP())} /klik</span></div>
+    <div class="str"><span class="sl2">Auto</span><span class="sv">${fmt(calcAPS())} /s</span></div>
+    <div class="str"><span class="sl2">Total optjent</span><span class="sv">${fmt(G.totalEarned)}</span></div>
+    <div class="str"><span class="sl2">Bygninger</span><span class="sv">${totB()}</span></div>
+    <div class="str"><span class="sl2">Verden upgrades</span><span class="sv">${Object.keys(G.buyWorldUpgs).length}</span></div>
+    <div class="str"><span class="sl2">Verdener låst</span><span class="sv">${G.unlockedWorlds.length}/10</span></div>
+    <div class="str"><span class="sl2">Bosser dræbt</span><span class="sv">${G.totalBossKills}</span></div>
+    <div class="str"><span class="sl2">Events fanget</span><span class="sv">${G.totalEventsCaught}</span></div>
+    <div class="str"><span class="sl2">Prestige stjerner</span><span class="sv">★ ${G.prestigeStars}</span></div>
+    <div class="str"><span class="sl2">Prestige mult</span><span class="sv">×${G.prestigeMult.toFixed(2)}</span></div>
+    <div class="str"><span class="sl2">Spiltid</span><span class="sv">${fmtT(G.playTime)}</span></div>`;
+}
+
+function checkAchs(){
+  ACHS.forEach(a=>{if(!achs.has(a.id)&&a.f()){achs.add(a.id);notify('🏆 '+a.n+'!','gold');renderAchs();}});
+}
+
+function renderAll(){
+  renderBuildings();renderUpgrades();renderWorldsNav();renderWorldUpgrades();renderSkillTree();renderAchs();renderStats();updateLvUI();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TABS
+// ═══════════════════════════════════════════════════════════
+function lsTab(t){
+  ['upg','skill','world','save'].forEach(x=>document.getElementById('lt-'+x).style.display=x===t?'block':'none');
+  document.querySelectorAll('#ltabs .tab').forEach((el,i)=>el.className='tab'+(['upg','skill','world','save'][i]===t?' active':''));
+  if(t==='world')renderWorldsNav();
+  if(t==='save'){renderStats();drawGraph();}
+  if(t==='skill')renderSkillTree();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SAVE / LOAD / IMPORT / EXPORT
+// ═══════════════════════════════════════════════════════════
+function save(){
+  try{
+    const d={...G,achs:[...achs],savedAt:Date.now()};
+    localStorage.setItem('cc5',JSON.stringify(d));
+    document.getElementById('save-ind').textContent='💾 gemt '+new Date().toLocaleTimeString('da');
+  }catch(e){}
+}
+function load(){
+  try{
+    const raw=localStorage.getItem('cc5');if(!raw)return false;
+    const s=JSON.parse(raw);
+    Object.assign(G,s);
+    if(s.achs)s.achs.forEach(a=>achs.add(a));
+    const off=Math.min((Date.now()-s.savedAt)/1000,28800);
+    if(off>10){
+      const offMult=1+getSkillVal('sk7');
+      const g=calcAPS()*off*.5*offMult*(G.buyWorldUpgs['w2_5']?3:1);
+      G.energy+=g;G.totalEarned+=g;
+      document.getElementById('offline-txt').textContent='Du var væk i '+fmtT(off)+' — optjente '+fmt(g)+' energi (×'+offMult.toFixed(1)+' offline bonus)';
+      document.getElementById('offline-banner').classList.add('show');
+    }
+    G.lastTick=Date.now();
+    return true;
+  }catch(e){return false;}
+}
+function exportSave(){
+  try{
+    const d={...G,achs:[...achs],savedAt:Date.now()};
+    const code=btoa(JSON.stringify(d));
+    navigator.clipboard.writeText(code).then(()=>notify('📤 Save kopieret til udklipsholder!','green')).catch(()=>{
+      const tx=document.getElementById('save-code');tx.style.display='block';tx.value=code;tx.select();
+    });
+  }catch(e){}
+}
+function clearSave(){
+  if(!confirm('Er du sikker? Alt slettes!'))return;
+  localStorage.removeItem('cc5');location.reload();
+}
+document.getElementById('save-code').addEventListener('keydown',e=>{
+  if(e.key==='Enter'){
+    try{
+      const d=JSON.parse(atob(e.target.value.trim()));
+      Object.assign(G,d);if(d.achs)d.achs.forEach(a=>achs.add(a));
+      G.lastTick=Date.now();renderAll();
+      notify('📥 Save importeret!','green');
+      e.target.style.display='none';
+    }catch(err){notify('❌ Ugyldig save-kode','red');}
+  }
+});
+
+// ═══════════════════════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════════════════════
+function fmt(n){
+  if(typeof n!=='number'||isNaN(n)||n<0)return'0';
+  if(n<1000)return Math.floor(n)+'';
+  const S=['K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc','Ud','Dd'];
+  const i=Math.floor(Math.log10(n)/3)-1;
+  if(i>=S.length)return n.toExponential(2);
+  return+(n/Math.pow(1000,i+1)).toFixed(2)+S[i];
+}
+function fmtT(s){if(s<60)return Math.floor(s)+'s';if(s<3600)return Math.floor(s/60)+'m '+Math.floor(s%60)+'s';return Math.floor(s/3600)+'h '+Math.floor((s%3600)/60)+'m';}
+function notify(msg,type=''){
+  const el=document.createElement('div');el.className='ni'+(type?' '+type:'');el.textContent=msg;
+  document.getElementById('notif').appendChild(el);setTimeout(()=>el.remove(),3200);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  STARS BG
+// ═══════════════════════════════════════════════════════════
+function initStars(){
+  const c=document.getElementById('stars-c'),ctx=c.getContext('2d');
+  c.width=window.innerWidth;c.height=window.innerHeight;
+  const stars=Array.from({length:150},()=>({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*.7+.15,o:Math.random(),d:Math.random()*.004+.001}));
+  (function draw(){ctx.clearRect(0,0,c.width,c.height);stars.forEach(s=>{s.o+=s.d*(Math.random()>.5?1:-1);s.o=Math.max(.04,Math.min(.75,s.o));ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=`rgba(180,210,255,${s.o})`;ctx.fill();});requestAnimationFrame(draw);})();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════
+window.addEventListener('load',()=>{
+  initStars();
+  load();
+  renderAll();
+  // Auto-save every 30s
+  setInterval(save,30000);
+  // Render upgrades every 2s (cheap)
+  setInterval(()=>{renderUpgrades();renderWorldUpgrades();renderSkillTree();},2000);
+  // Start game loop
+  G.lastTick=Date.now();
+  requestAnimationFrame(gameTick);
+  notify('⚡ Velkommen til CosmoCLicker! Klik for at starte!');
+});
+window.addEventListener('beforeunload',save);
+</script>
+</body>
+</html>
